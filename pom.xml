@@ -22,7 +22,7 @@
     </organization>
 
     <scm>
-        <developerConnection>scm:git:git@git.synyx.org:opencms-solr-module</developerConnection>
+        <developerConnection>scm:git:ssh://git@git.synyx.org:opencms-solr-module</developerConnection>
     </scm>
 
     <distributionManagement>
@@ -30,11 +30,7 @@
             <id>public-releases.nexus.synyx.de</id>
             <url>http://nexus.synyx.de/content/repositories/public-releases</url>
         </repository>
-        <snapshotRepository>
-            <id>snapshots.nexus.synyx.de</id>
-            <url>http://nexus.synyx.de/content/repositories/snapshots</url>
-        </snapshotRepository>
-    </distributionManagement>
+   </distributionManagement>
 
     <repositories>
         <repository>
