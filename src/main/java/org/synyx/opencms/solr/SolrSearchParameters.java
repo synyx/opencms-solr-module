@@ -89,7 +89,16 @@ public class SolrSearchParameters extends CmsSearchParameters {
     }
 
     private boolean containsWhitespace(String text) {
-        // todo delegate to any existing method
+        if (text == null || text.length() == 0) {
+            return false;
+        }
+
+        for (int i = 0; i < text.length(); i++) {
+            if (Character.isWhitespace(text.charAt(i))) {
+                return true;
+            }
+        }
+
         return false;
     }
 
