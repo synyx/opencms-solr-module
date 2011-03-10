@@ -22,7 +22,8 @@
     </organization>
 
     <scm>
-        <developerConnection>scm:git:ssh://git@git.synyx.org:opencms-solr-module</developerConnection>
+        <connection>scm:git:http://git.synyx.org/opencms-solr-module</connection>
+	<developerConnection>scm:git:ssh://git@git.synyx.org/opencms-solr-module</developerConnection>
     </scm>
 
     <distributionManagement>
@@ -112,6 +113,17 @@
     </reporting>
     <build>
        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.0</version>
+                <configuration>
+                    <preparationGoals>clean verify</preparationGoals>
+                    <scmCommentPrefix> * [maven-release-plugin] - </scmCommentPrefix>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
