@@ -144,17 +144,17 @@
                             <goal>createtree</goal>
                             <goal>manifest</goal>
                             <goal>createzip</goal>
-                            <goal>cmsshell</goal>
+                            <!--<goal>cmsshell</goal>-->
                         </goals>
                         <configuration>
                             <name>${opencmsname}</name>
                             <targetLibPath>system/modules/${opencmsname}/lib/</targetLibPath>
-                            <jarFile>${project.build.directory}/${project.build.finalName}-classes.jar</jarFile>
+                            <jarFile>${project.build.directory}/${project.build.finalName}.jar</jarFile>
                             <generateuuids>true</generateuuids>
                             <exportversion>5</exportversion>
                             <opencmsversion>7.5.2</opencmsversion>
                             <version>${project.moduleversion}</version>
-                            <srcfolder>${project.basedir}/src/main/webapp/vfs/</srcfolder>
+                            <srcfolder>${project.basedir}/src/main/vfs/</srcfolder>
                             <excludes>META-INF/,WEB-INF/,**/.svn/</excludes>
                             <distfolder>${project.basedir}/target/opencms-module/</distfolder>
                             <webappfolder>${project.basedir}/OpenCmsWork/WEB-INF/</webappfolder>
@@ -209,6 +209,7 @@
             <artifactId>opencms-solr</artifactId>
             <version>7.5.2.5</version>
             <type>jar</type>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
@@ -228,6 +229,7 @@
             <groupId>org.synyx.org.apache.solr</groupId>
             <artifactId>solr-solrj</artifactId>
             <version>1.4.1-patched-0.5</version>
+            <scope>provided</scope>
         </dependency>
         <!-- TEST DEPENDENCIES -->
         <dependency>
