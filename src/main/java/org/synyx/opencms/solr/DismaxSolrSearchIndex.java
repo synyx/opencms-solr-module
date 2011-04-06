@@ -53,7 +53,6 @@ public class DismaxSolrSearchIndex extends SolrSearchIndex {
         
         // this is a "regular" query over one or more fields
         // add one sub-query for each of the selected fields, e.g. "content", "title" etc.
-
         List<String> queryFieldParameters = new ArrayList<String>();
         for (int i = 0; i < params.getFields().size(); i++) {
             // SHOULD
@@ -78,7 +77,6 @@ public class DismaxSolrSearchIndex extends SolrSearchIndex {
 
 
     private String getOccurFlag(Occur occur) {
-        
         if (occur == Occur.MUST_NOT) {
             return "-";
         } else if (occur == Occur.MUST) {
