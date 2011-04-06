@@ -8,7 +8,7 @@ import org.apache.solr.client.solrj.impl.BinaryRequestWriter;
 import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
 
 /**
- *
+ * Configures the access to solr.
  * @author Florian Hopf, Synyx GmbH & Co. KG, hopf@synyx.de
  */
 public class ServerFactory {
