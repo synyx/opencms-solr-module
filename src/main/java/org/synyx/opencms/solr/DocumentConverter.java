@@ -8,6 +8,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
+import org.opencms.search.CmsTimeWindowSearchFieldSupport;
 import org.opencms.search.fields.CmsSearchField;
 
 /**
@@ -72,6 +73,8 @@ public class DocumentConverter {
     private boolean isDateField(String name) {
         return name.equals(CmsSearchField.FIELD_DATE_CONTENT)
                 || name.equals(CmsSearchField.FIELD_DATE_CREATED)
-                || name.equals(CmsSearchField.FIELD_DATE_LASTMODIFIED);
+                || name.equals(CmsSearchField.FIELD_DATE_LASTMODIFIED)
+                || name.equals(CmsTimeWindowSearchFieldSupport.FIELD_RELEASE)
+                || name.equals(CmsTimeWindowSearchFieldSupport.FIELD_EXPIRED);
     }
 }

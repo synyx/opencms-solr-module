@@ -206,10 +206,15 @@
        </plugins>
     </build>
     <dependencies>
-       <dependency>
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+            <version>1.6</version>
+        </dependency>
+        <dependency>
             <groupId>org.opencms</groupId>
             <artifactId>opencms-solr</artifactId>
-            <version>7.5.2.5</version>
+            <version>7.5.2.6-SNAPSHOT</version>
             <type>jar</type>
             <scope>provided</scope>
         </dependency>

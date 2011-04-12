@@ -1,12 +1,12 @@
 package org.synyx.opencms.solr;
 
+import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.lucene.search.BooleanClause.Occur;
+import org.opencms.search.CmsSearchParameters;
+import org.opencms.search.CmsSearchParameters.CmsSearchFieldQuery;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import org.apache.lucene.search.BooleanClause.Occur;
-import org.apache.solr.client.solrj.SolrQuery;
-import org.opencms.search.CmsSearchParameters;
-import org.opencms.search.CmsSearchParameters.CmsSearchFieldQuery;
 
 
 /**
@@ -50,7 +50,7 @@ public class DismaxSolrSearchIndex extends SolrSearchIndex {
     }
 
     private List<String> getQueryFieldParameters(CmsSearchParameters params) {
-        
+
         // this is a "regular" query over one or more fields
         // add one sub-query for each of the selected fields, e.g. "content", "title" etc.
         List<String> queryFieldParameters = new ArrayList<String>();
