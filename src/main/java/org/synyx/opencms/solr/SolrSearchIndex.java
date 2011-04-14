@@ -1,5 +1,6 @@
 package org.synyx.opencms.solr;
 
+import java.text.SimpleDateFormat;
 import org.opencms.main.CmsException;
 import org.synyx.opencms.solr.indexing.SolrIndexWriter;
 import org.apache.commons.logging.Log;
@@ -53,20 +54,34 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
     private SolrServer solrServer = ServerFactory.getSolrServer("");
     private boolean useSolrPaging = true;
 
+    // 1000 years should be enough
+    // too large numbers will make DateTools fail when parsing the date
+    private static final long DEFAULT_DATE_EXPIRED = 500 * 365 * 24 * 60 * 60 * 1000;
+    private static final long DEFAULT_DATE_RELEASED = 0L;
+
     @Override
     public Fieldable getDateReleaseSearchField(CmsResource resource) {
-        Fieldable dateReleased = new Field(FIELD_RELEASE, DateTools.dateToString(new Date(resource.getDateReleased()),
+        long dateReleased = DEFAULT_DATE_RELEASED;
+        if (resource.getDateReleased() != CmsResource.DATE_RELEASED_DEFAULT) {
+            dateReleased = resource.getDateReleased();
+        }
+        Fieldable dateReleasedField = new Field(FIELD_RELEASE, DateTools.dateToString(new Date(dateReleased),
                 DateTools.Resolution.MILLISECOND), Field.Store.YES, Field.Index.NOT_ANALYZED);
-        dateReleased.setBoost(0);
-        return dateReleased;
+        dateReleasedField.setBoost(0);
+        return dateReleasedField;
     }
 
     @Override
     public Fieldable getDateExpiredSearchField(CmsResource resource) {
-        Fieldable dateExpired = new Field(FIELD_EXPIRED, DateTools.dateToString(new Date(resource.getDateExpired()),
+        long dateExpired = DEFAULT_DATE_EXPIRED;
+        if (resource.getDateExpired() != CmsResource.DATE_EXPIRED_DEFAULT) {
+            dateExpired = resource.getDateExpired();
+        }
+
+        Fieldable dateExpiredField = new Field(FIELD_EXPIRED, DateTools.dateToString(new Date(dateExpired),
                 DateTools.Resolution.MILLISECOND), Field.Store.YES, Field.Index.NOT_ANALYZED);
-        dateExpired.setBoost(0);
-        return dateExpired;
+        dateExpiredField.setBoost(0);
+        return dateExpiredField;
     }
 
     @Override
@@ -302,6 +317,8 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
                                 && (hasReadPermission(searchCms, type, path))) {
                             searchResults.add(createSearchResult(response, solrDocument, hits));
                         } else {
+                            visibleHitCount--;
+                            cnt++;
                             LOG.warn("Indexed document found could not be added to the search result: " + solrDocument);
                         }
                         cnt++;
@@ -562,4 +579,5 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
     protected synchronized void indexSearcherOpen(String path) {
         // NOOP
     }
+
 }
