@@ -56,7 +56,7 @@ public class DocumentConverter {
                 try {
                     inputDocument.addField(field.name(), DateTools.stringToDate(field.stringValue()));
                 } catch (ParseException ex) {
-                    throw new IllegalArgumentException(ex);
+                    throw new IllegalArgumentException("Failed to parse date for field " + field.name(), ex);
                 }
             } else {
                 inputDocument.addField(field.name(), field.stringValue());
