@@ -50,7 +50,7 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
 
     public final static String FIELD_ID = "id";
     private Log LOG = LogFactory.getLog(SolrSearchIndex.class);
-    private SolrServer solrServer = ServerFactory.getSolrServer("");
+    private SolrServer solrServer;
     private boolean useSolrPaging = true;
     private static final long DEFAULT_DATE_EXPIRED;
     private static final long DEFAULT_DATE_RELEASED = 0L;
@@ -61,6 +61,14 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
         Calendar cal = Calendar.getInstance();
         cal.roll(Calendar.YEAR, 500);
         DEFAULT_DATE_EXPIRED = cal.getTimeInMillis();
+    }
+
+    @Override
+    public void initialize() throws CmsSearchException {
+        super.initialize();
+        IndexConfiguration config = ConfigurationFactory.initIndexConfiguration(getName());
+        this.solrServer = config.initializeServer();
+        this.useSolrPaging = config.isSolrPaging();
     }
 
     @Override
