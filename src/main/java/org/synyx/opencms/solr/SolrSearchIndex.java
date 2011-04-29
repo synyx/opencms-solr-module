@@ -332,7 +332,6 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
 
                 searchResults.setHitCount(visibleHitCount); // save the total count of search results
                 searchResults.setFacetFields(response.getFacetFields());
-                searchResults.setFacetPivot(response.getFacetPivot());
             } else {
                 searchResults.setHitCount(0);
             }
