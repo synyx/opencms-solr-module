@@ -1,6 +1,5 @@
 package org.synyx.opencms.solr;
 
-import java.text.SimpleDateFormat;
 import org.opencms.main.CmsException;
 import org.synyx.opencms.solr.indexing.SolrIndexWriter;
 import org.apache.commons.logging.Log;
@@ -51,13 +50,21 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
     public final static String FIELD_ID = "id";
 
     private Log LOG = LogFactory.getLog(SolrSearchIndex.class);
-    private SolrServer solrServer = ServerFactory.getSolrServer("");
+    private SolrServer solrServer;
     private boolean useSolrPaging = true;
 
     // 1000 years should be enough
     // too large numbers will make DateTools fail when parsing the date
     private static final long DEFAULT_DATE_EXPIRED = 500 * 365 * 24 * 60 * 60 * 1000;
     private static final long DEFAULT_DATE_RELEASED = 0L;
+
+    @Override
+    public void initialize() throws CmsSearchException {
+        super.initialize();
+        IndexConfiguration config = ConfigurationFactory.initIndexConfiguration(getName());
+        this.solrServer = config.initializeServer();
+        this.useSolrPaging = config.isSolrPaging();
+    }
 
     @Override
     public Fieldable getDateReleaseSearchField(CmsResource resource) {

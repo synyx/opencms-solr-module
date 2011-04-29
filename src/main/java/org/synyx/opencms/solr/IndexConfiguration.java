@@ -12,9 +12,11 @@ import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
 public class IndexConfiguration {
 
     private final String url;
+    private final boolean useSolrPaging;
 
-    public IndexConfiguration(String url) {
+    public IndexConfiguration(String url, boolean useSolrPaging) {
         this.url = url;
+        this.useSolrPaging = useSolrPaging;
     }
 
     /**
@@ -31,5 +33,9 @@ public class IndexConfiguration {
         } catch (MalformedURLException ex) {
             throw new IllegalStateException(ex);
         }
+    }
+
+    boolean isSolrPaging() {
+        return useSolrPaging;
     }
 }
