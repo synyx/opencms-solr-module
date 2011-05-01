@@ -326,7 +326,6 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
                             searchResults.add(createSearchResult(response, solrDocument, hits));
                         } else {
                             visibleHitCount--;
-                            cnt++;
                             LOG.warn("Indexed document found could not be added to the search result: " + solrDocument);
                         }
                         cnt++;
