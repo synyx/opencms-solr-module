@@ -1,5 +1,6 @@
 package org.synyx.opencms.solr;
 
+import java.util.Calendar;
 import org.opencms.main.CmsException;
 import org.synyx.opencms.solr.indexing.SolrIndexWriter;
 import org.apache.commons.logging.Log;
@@ -48,15 +49,19 @@ import org.opencms.search.MinMaxRangeQuery;
 public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeWindowSearchFieldSupport {
 
     public final static String FIELD_ID = "id";
-
     private Log LOG = LogFactory.getLog(SolrSearchIndex.class);
     private SolrServer solrServer;
     private boolean useSolrPaging = true;
-
-    // 1000 years should be enough
-    // too large numbers will make DateTools fail when parsing the date
-    private static final long DEFAULT_DATE_EXPIRED = 500 * 365 * 24 * 60 * 60 * 1000;
+    private static final long DEFAULT_DATE_EXPIRED;
     private static final long DEFAULT_DATE_RELEASED = 0L;
+
+    static {
+        // 500 years should be enough
+        // too large numbers will make DateTools fail when parsing the date
+        Calendar cal = Calendar.getInstance();
+        cal.roll(Calendar.YEAR, 500);
+        DEFAULT_DATE_EXPIRED = cal.getTimeInMillis();
+    }
 
     @Override
     public void initialize() throws CmsSearchException {
@@ -111,9 +116,7 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
 
         DateTime dateTimeMin = new DateTime(minTimeMillis, DateTimeZone.UTC);
         DateTime dateTimeMax = new DateTime(maxTimeMillis, DateTimeZone.UTC);
-        StringBuilder sb = new StringBuilder("[")
-                .append((minTimeMillis > Long.MIN_VALUE ? dateTimeMin : "*")).append(" TO ")
-                .append((maxTimeMillis < Long.MAX_VALUE ? dateTimeMax : "*")).append("]");
+        StringBuilder sb = new StringBuilder("[").append((minTimeMillis > Long.MIN_VALUE ? dateTimeMin : "*")).append(" TO ").append((maxTimeMillis < Long.MAX_VALUE ? dateTimeMax : "*")).append("]");
         return new MinMaxRangeQuery(sb.toString(), dateTimeMin.getMillis(), dateTimeMax.getMillis());
     }
 
@@ -125,9 +128,7 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
 
         DateTime dateTimeMin = new DateTime(minTimeMillis, DateTimeZone.UTC);
         DateTime dateTimeMax = new DateTime(maxTimeMillis, DateTimeZone.UTC);
-        StringBuilder sb = new StringBuilder("[")
-                .append((minTimeMillis > Long.MIN_VALUE ? dateTimeMin : "*")).append(" TO ")
-                .append((maxTimeMillis < Long.MAX_VALUE ? dateTimeMax : "*")).append("]");
+        StringBuilder sb = new StringBuilder("[").append((minTimeMillis > Long.MIN_VALUE ? dateTimeMin : "*")).append(" TO ").append((maxTimeMillis < Long.MAX_VALUE ? dateTimeMax : "*")).append("]");
         return new MinMaxRangeQuery(sb.toString(), minTimeMillis, maxTimeMillis);
     }
 
@@ -585,5 +586,4 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
     protected synchronized void indexSearcherOpen(String path) {
         // NOOP
     }
-
 }
