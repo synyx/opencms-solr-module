@@ -55,6 +55,8 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
     private static final long DEFAULT_DATE_EXPIRED;
     private static final long DEFAULT_DATE_RELEASED = 0L;
 
+    protected IndexConfiguration indexConfiguration;
+
     static {
         // 500 years should be enough
         // too large numbers will make DateTools fail when parsing the date
@@ -66,9 +68,9 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
     @Override
     public void initialize() throws CmsSearchException {
         super.initialize();
-        IndexConfiguration config = ConfigurationFactory.initIndexConfiguration(getName());
-        this.solrServer = config.initializeServer();
-        this.useSolrPaging = config.isSolrPaging();
+        indexConfiguration = ConfigurationFactory.initIndexConfiguration(getName());
+        this.solrServer = indexConfiguration.initializeServer();
+        this.useSolrPaging = indexConfiguration.isSolrPaging();
     }
 
     @Override

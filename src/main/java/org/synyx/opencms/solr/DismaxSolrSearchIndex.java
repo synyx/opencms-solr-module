@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-
 /**
  * Implements a strategy for preparing a solr query object to be used with a Solr-Dismax request handler by setting the
  * specified search related parameters on it.
@@ -16,18 +15,21 @@ import java.util.List;
  */
 public class DismaxSolrSearchIndex extends SolrSearchIndex {
 
-
     @Override
     public void addQueryToSolrQuery(SolrQuery solrQuery, CmsSearchParameters params) {
 
         if (params.getFieldQueries() != null) {
-            List<String> queryFieldParameters = getQueryFieldParameters(params.getFieldQueries());
-            solrQuery.setParam("qf", queryFieldParameters.toArray(new String[0]));
+            if (indexConfiguration.isSendQF()) {
+                List<String> queryFieldParameters = getQueryFieldParameters(params.getFieldQueries());
+                solrQuery.setParam("qf", queryFieldParameters.toArray(new String[0]));
+            }
             String queryString = getQueryString(params.getFieldQueries());
             solrQuery.setQuery(queryString);
         } else if ((params.getFields() != null) && (params.getFields().size() > 0)) {
-            List<String> queryFieldParameters = getQueryFieldParameters(params);
-            solrQuery.setParam("qf", queryFieldParameters.toArray(new String[0]));
+            if (indexConfiguration.isSendQF()) {
+                List<String> queryFieldParameters = getQueryFieldParameters(params);
+                solrQuery.setParam("qf", queryFieldParameters.toArray(new String[0]));
+            }
             String queryString = params.getQuery().trim();
             solrQuery.setQuery(queryString);
         } else {
@@ -35,7 +37,6 @@ public class DismaxSolrSearchIndex extends SolrSearchIndex {
             solrQuery.setQuery(queryString);
         }
     }
-
 
     private List<String> getQueryFieldParameters(List<CmsSearchFieldQuery> searchFieldQueryList) {
 
@@ -62,7 +63,6 @@ public class DismaxSolrSearchIndex extends SolrSearchIndex {
         return queryFieldParameters;
     }
 
-
     private String getQueryString(List<CmsSearchFieldQuery> searchFieldQueryList) {
 
         StringBuilder queryStringBuilder = new StringBuilder();
@@ -74,7 +74,6 @@ public class DismaxSolrSearchIndex extends SolrSearchIndex {
 
         return queryStringBuilder.toString().trim();
     }
-
 
     private String getOccurFlag(Occur occur) {
         if (occur == Occur.MUST_NOT) {

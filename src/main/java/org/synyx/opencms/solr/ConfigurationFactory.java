@@ -20,7 +20,8 @@ public class ConfigurationFactory {
             props.load(ConfigurationFactory.class.getResourceAsStream("/solr.properties"));
             String url = props.getProperty(indexName.concat(".url"));
             boolean useSolrPaging = getBooleanValue(props, indexName.concat(".useSolrPaging"));
-            return new IndexConfiguration(url, useSolrPaging);
+            boolean sendQF = getBooleanValue(props, indexName.concat(".sendQF"));
+            return new IndexConfiguration(url, useSolrPaging, sendQF);
         } catch (IOException ex) {
             throw new IllegalStateException("/solr.properties not found", ex);
         }

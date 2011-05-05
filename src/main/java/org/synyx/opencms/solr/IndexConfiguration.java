@@ -13,10 +13,12 @@ public class IndexConfiguration {
 
     private final String url;
     private final boolean useSolrPaging;
+    private final boolean sendQF;
 
-    public IndexConfiguration(String url, boolean useSolrPaging) {
+    public IndexConfiguration(String url, boolean useSolrPaging, boolean sendQF) {
         this.url = url;
         this.useSolrPaging = useSolrPaging;
+        this.sendQF = sendQF;
     }
 
     /**
@@ -37,5 +39,9 @@ public class IndexConfiguration {
 
     boolean isSolrPaging() {
         return useSolrPaging;
+    }
+
+    boolean isSendQF() {
+        return sendQF;
     }
 }
