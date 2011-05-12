@@ -29,7 +29,7 @@ public class ExpirationUnawareCmsVfsIndexer extends CmsVfsIndexer {
     @Override
     protected void updateResource(I_CmsIndexWriter writer, CmsIndexingThreadManager threadManager, CmsResource resource)
             throws CmsIndexException {
-        if (resource.isInternal() || resource.isFolder()) {
+        if (resource.isInternal() || resource.isFolder() || resource.getState().isDeleted()) {
             // don't index internal resources or folders
             return;
         }
