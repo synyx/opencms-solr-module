@@ -1,5 +1,6 @@
 package org.synyx.opencms.solr;
 
+import java.net.MalformedURLException;
 import java.util.Calendar;
 import org.opencms.main.CmsException;
 import org.synyx.opencms.solr.indexing.SolrIndexWriter;
@@ -39,6 +40,8 @@ import org.joda.time.DateTimeZone;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import org.apache.solr.client.solrj.impl.BinaryRequestWriter;
+import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
 import org.opencms.search.MinMaxRangeQuery;
 
 /**
@@ -52,9 +55,12 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
     private Log LOG = LogFactory.getLog(SolrSearchIndex.class);
     private SolrServer solrServer;
     private boolean useSolrPaging = true;
+    private int rowSize = 1000;
     private static final long DEFAULT_DATE_EXPIRED;
     private static final long DEFAULT_DATE_RELEASED = 0L;
-    protected IndexConfiguration indexConfiguration;
+    private static final String CONFIG_URL = "url";
+    private static final String CONFIG_USE_SOLR_PAGING = "useSolrPaging";
+    private static final String CONFIG_NO_SOLR_PAGING_ROW_SIZE = "rowSize";
 
     static {
         // 500 years should be enough
@@ -67,9 +73,22 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
     @Override
     public void initialize() throws CmsSearchException {
         super.initialize();
-        indexConfiguration = ConfigurationFactory.initIndexConfiguration(getName());
-        this.solrServer = indexConfiguration.initializeServer();
-        this.useSolrPaging = indexConfiguration.isSolrPaging();
+        Map<String, String> configValues = ConfigurationFactory.initIndexConfiguration(getName());
+        initialize(configValues);
+    }
+
+    /**
+     * Initializes this concrete search index with the config from properties.
+     * @param configValues
+     */
+    protected void initialize(Map<String, String> configValues) {
+        this.solrServer = initServer(configValues.get(CONFIG_URL));
+        String useSolrPagingText = configValues.get(CONFIG_USE_SOLR_PAGING);
+        this.useSolrPaging = Boolean.valueOf(useSolrPagingText);
+        String rowSizeText = configValues.get(CONFIG_NO_SOLR_PAGING_ROW_SIZE);
+        if (rowSizeText != null) {
+            rowSize = Integer.parseInt(rowSizeText);
+        }
     }
 
     @Override
@@ -261,8 +280,7 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
                 solrQuery.setStart(params.getMatchesPerPage() * (params.getSearchPage() - 1));
             } else {
                 // setting to a quite high value should be sufficient
-                // this should probably be configurable
-                solrQuery.setRows(1000);
+                solrQuery.setRows(rowSize);
             }
 
             if (params instanceof SolrSearchParameters) {
@@ -313,12 +331,9 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
                 }
 
                 int visibleHitCount = hitCount;
-                int iterationStart = 0;
-                if (useSolrPaging) {
-                    iterationStart = start;
-                }
 
-                for (int i = iterationStart, cnt = 0; (i < hitCount) && (cnt < end); i++) {
+                for (int i = 0, cnt = 0; (i < hitCount)
+                        && ((useSolrPaging && i < end) || (!useSolrPaging && cnt < end)); i++) {
                     try {
                         SolrDocument solrDocument = hits.get(i);
 
@@ -593,5 +608,15 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
     @Override
     protected synchronized void indexSearcherOpen(String path) {
         // NOOP
+    }
+
+    private SolrServer initServer(String url) {
+        try {
+            CommonsHttpSolrServer httpSolrServer = new CommonsHttpSolrServer(url);
+            httpSolrServer.setRequestWriter(new BinaryRequestWriter());
+            return httpSolrServer;
+        } catch (MalformedURLException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 }

@@ -1,6 +1,8 @@
 package org.synyx.opencms.solr;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -10,26 +12,28 @@ import java.util.Properties;
 public class ConfigurationFactory {
 
     /**
-     * Creates the index configuration bean from the properties file.
+     * Creates the index configuration from the properties file.
      * @param indexName
-     * @return
+     * @return a Map that only contains the configuration values for the index requested. The
+     * key is in a simple format, i.e. without the index name prefix.
      */
-    public synchronized static IndexConfiguration initIndexConfiguration(String indexName) {
+    public synchronized static Map<String, String> initIndexConfiguration(String indexName) {
+        Map<String, String> result = new HashMap<String, String>();
         Properties props = new Properties();
         try {
             props.load(ConfigurationFactory.class.getResourceAsStream("/solr.properties"));
-            String url = props.getProperty(indexName.concat(".url"));
-            boolean useSolrPaging = getBooleanValue(props, indexName.concat(".useSolrPaging"));
-            boolean sendQF = getBooleanValue(props, indexName.concat(".sendQF"));
-            return new IndexConfiguration(url, useSolrPaging, sendQF);
+            for (Object key : props.keySet()) {
+                String keyValue = key.toString();
+                if (keyValue.startsWith(indexName)) {
+                    String value = props.getProperty(keyValue);
+                    String simpleKey = keyValue.substring(indexName.length() + 1);
+                    result.put(simpleKey, value);
+                }
+            }
         } catch (IOException ex) {
             throw new IllegalStateException("/solr.properties not found", ex);
         }
-    }
-
-    private static boolean getBooleanValue(Properties props, String key) {
-        String booleanValue = props.getProperty(key, "false");
-        return Boolean.parseBoolean(booleanValue);
+        return result;
     }
 
 }
