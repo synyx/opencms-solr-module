@@ -1,5 +1,6 @@
 package org.synyx.opencms.solr;
 
+import java.util.Map;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.opencms.search.CmsSearchParameters;
@@ -15,18 +16,29 @@ import java.util.List;
  */
 public class DismaxSolrSearchIndex extends SolrSearchIndex {
 
+    private boolean sendQF = false;
+
+    private static final String CONFIG_SEND_QF = "sendQF";
+
+    @Override
+    protected void initialize(Map<String, String> configValues) {
+        super.initialize(configValues);
+
+        this.sendQF = Boolean.parseBoolean(configValues.get(CONFIG_SEND_QF));
+    }
+
     @Override
     public void addQueryToSolrQuery(SolrQuery solrQuery, CmsSearchParameters params) {
 
         if (params.getFieldQueries() != null) {
-            if (indexConfiguration.isSendQF()) {
+            if (sendQF) {
                 List<String> queryFieldParameters = getQueryFieldParameters(params.getFieldQueries());
                 solrQuery.setParam("qf", queryFieldParameters.toArray(new String[0]));
             }
             String queryString = getQueryString(params.getFieldQueries());
             solrQuery.setQuery(queryString);
         } else if ((params.getFields() != null) && (params.getFields().size() > 0)) {
-            if (indexConfiguration.isSendQF()) {
+            if (sendQF) {
                 List<String> queryFieldParameters = getQueryFieldParameters(params);
                 solrQuery.setParam("qf", queryFieldParameters.toArray(new String[0]));
             }
