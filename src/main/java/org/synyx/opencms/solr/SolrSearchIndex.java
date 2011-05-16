@@ -54,7 +54,6 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
     private boolean useSolrPaging = true;
     private static final long DEFAULT_DATE_EXPIRED;
     private static final long DEFAULT_DATE_RELEASED = 0L;
-
     protected IndexConfiguration indexConfiguration;
 
     static {
@@ -260,6 +259,10 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
             if (useSolrPaging) {
                 solrQuery.setRows(params.getMatchesPerPage());
                 solrQuery.setStart(params.getMatchesPerPage() * (params.getSearchPage() - 1));
+            } else {
+                // setting to a quite high value should be sufficient
+                // this should probably be configurable
+                solrQuery.setRows(1000);
             }
 
             if (params instanceof SolrSearchParameters) {
@@ -310,27 +313,30 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
                 }
 
                 int visibleHitCount = hitCount;
-                for (int i = start, cnt = 0; (i < hitCount) && (i < end); i++) {
+                int iterationStart = 0;
+                if (useSolrPaging) {
+                    iterationStart = start;
+                }
+
+                for (int i = iterationStart, cnt = 0; (i < hitCount) && (cnt < end); i++) {
                     try {
-                        SolrDocument solrDocument = null;
-                        if (useSolrPaging) {
-                            solrDocument = hits.get(cnt);
-                        } else {
-                            solrDocument = hits.get(i);
-                        }
-                        Date dateCreated = (Date) solrDocument.get(CmsSearchField.FIELD_DATE_CREATED);
-                        Date dateLastModified = (Date) solrDocument.get(CmsSearchField.FIELD_DATE_LASTMODIFIED);
+                        SolrDocument solrDocument = hits.get(i);
+
                         String path = (String) solrDocument.get(CmsSearchField.FIELD_PATH);
                         String type = (String) solrDocument.get(CmsSearchField.FIELD_TYPE);
 
-                        if ((isInTimeRange(dateCreated, dateLastModified, params))
-                                && (hasReadPermission(searchCms, type, path))) {
-                            searchResults.add(createSearchResult(response, solrDocument, hits));
+                        if ((hasReadPermission(searchCms, type, path))) {
+                            // either add the result if we are in the current pagination window or if
+                            // we use solr paging anyway
+                            if (useSolrPaging || cnt >= start) {
+                                searchResults.add(createSearchResult(response, solrDocument, hits));
+                            }
+                            cnt++;
                         } else {
                             visibleHitCount--;
-                            LOG.warn("Indexed document found could not be added to the search result: " + solrDocument);
+                            LOG.warn("Indexed document found could not be added to the search result: " + path);
                         }
-                        cnt++;
+
                     } catch (Exception e) {
                         // should not happen, but if it does we want to go on with the next result nevertheless
                         if (LOG.isWarnEnabled()) {
