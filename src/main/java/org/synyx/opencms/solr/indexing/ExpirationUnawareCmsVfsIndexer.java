@@ -1,9 +1,11 @@
 package org.synyx.opencms.solr.indexing;
 
+import java.io.IOException;
 import org.opencms.file.CmsObject;
 import org.opencms.search.CmsIndexException;
 import org.opencms.search.CmsIndexingThreadManager;
 import org.opencms.search.CmsSearchIndex;
+import org.opencms.search.CmsSearchIndexSource;
 import org.opencms.search.CmsVfsIndexer;
 import org.opencms.search.I_CmsIndexWriter;
 import org.opencms.search.I_CmsIndexer;
@@ -72,4 +74,21 @@ public class ExpirationUnawareCmsVfsIndexer extends CmsVfsIndexer {
                     m_index.getName()));
         }
     }
+
+    @Override
+    public void rebuildIndex(I_CmsIndexWriter writer, CmsIndexingThreadManager threadManager, CmsSearchIndexSource source) throws CmsIndexException {
+        if (writer instanceof SolrIndexWriter) {
+            SolrIndexWriter solrWriter = (SolrIndexWriter) writer;
+            try {
+                solrWriter.deleteAllDocuments();
+            } catch (IOException ex) {
+                // TODO add a proper message container
+                throw new CmsIndexException(Messages.get().container(Messages.LOG_REBUILD_INDEX_FAILED_1, "SolrIndex"), ex);
+            }
+        }
+
+        super.rebuildIndex(writer, threadManager, source);
+    }
+
+
 }

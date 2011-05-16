@@ -114,8 +114,20 @@ public class SolrIndexWriter implements I_CmsIndexWriter {
     @Override
     public void deleteDocuments(String rootPath) throws IOException {
         try {
-            //solrServer.deleteById(rootPath);
-            solrServer.deleteByQuery("+parent-folders:" + rootPath);
+            solrServer.deleteById(rootPath);
+            commitable = true;
+        } catch (SolrServerException ex) {
+            throw new IOException(ex);
+        }
+    }
+
+    /**
+     * Deletes all documents that are in the index.
+     * @throws IOException
+     */
+    public void deleteAllDocuments() throws IOException {
+        try {
+            solrServer.deleteByQuery("*:*");
             commitable = true;
         } catch (SolrServerException ex) {
             throw new IOException(ex);
