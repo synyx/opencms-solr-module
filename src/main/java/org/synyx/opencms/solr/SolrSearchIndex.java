@@ -188,7 +188,6 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
      */
     @Override
     public I_CmsIndexWriter getIndexWriter(boolean create) throws CmsIndexException {
-        // TODO it's very likely that we have to include the index name in the url
         return new SolrIndexWriter(solrServer);
     }
 
@@ -223,8 +222,6 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
     @Override
     public final synchronized CmsSearchResultList search(CmsObject cms, CmsSearchParameters params)
             throws CmsSearchException {
-
-        // TODO check if access to Solr needs to be synchronized
 
         long timeTotal = -System.currentTimeMillis();
         long timeLucene;
@@ -313,7 +310,6 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
 
             if (hits != null) {
                 //int hitCount = hits.size() > hits.scoreDocs.length ? hits.scoreDocs.length : hits.totalHits;
-                // TODO prevent this cast?
                 int hitCount = (int) hits.getNumFound();
                 int page = params.getSearchPage();
                 int start = -1, end = -1;
