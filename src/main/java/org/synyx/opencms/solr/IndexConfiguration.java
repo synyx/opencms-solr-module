@@ -6,6 +6,11 @@ import org.apache.solr.client.solrj.impl.BinaryRequestWriter;
 import java.net.MalformedURLException;
 import java.util.Map;
 
+/**
+ * This class encapsulates the index configuration properties (these are dependency injected) and also provides an
+ * instance of SolrServer (which is created in this classes constructor).
+ * @author Oliver Messner, Synyx GmbH & Co. KG, messner@synyx.de
+ */
 public class IndexConfiguration {
 
     private static final String CONFIG_URL = "url";
