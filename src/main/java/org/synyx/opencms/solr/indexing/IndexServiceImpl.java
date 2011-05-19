@@ -12,6 +12,7 @@ import org.apache.solr.common.SolrDocumentList;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.synyx.opencms.solr.IndexConfiguration;
 
 /**
  * Default implementation that directly uses solrServer for updating and searching.
@@ -22,14 +23,10 @@ class IndexServiceImpl implements IndexService {
 
     private final static Log LOG = LogFactory.getLog(IndexServiceImpl.class);
 
-    private SolrServer solrServer;
+    private final SolrServer solrServer;
 
-    /**
-     * Creates an instance of type <code>IndexServiceImpl</code>.
-     * @param solrServer
-     */
-    public IndexServiceImpl(SolrServer solrServer) {
-        this.solrServer = solrServer;
+    public IndexServiceImpl(IndexConfiguration indexConfiguration) {
+        this.solrServer = indexConfiguration.getSolrServer();
     }
 
     @Override

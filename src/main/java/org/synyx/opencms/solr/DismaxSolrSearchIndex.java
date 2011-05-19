@@ -1,6 +1,5 @@
 package org.synyx.opencms.solr;
 
-import java.util.Map;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.opencms.search.CmsSearchParameters;
@@ -16,15 +15,14 @@ import java.util.List;
  */
 public class DismaxSolrSearchIndex extends SolrSearchIndex {
 
-    private boolean sendQF = false;
-
     private static final String CONFIG_SEND_QF = "sendQF";
 
-    @Override
-    protected void initialize(Map<String, String> configValues) {
-        super.initialize(configValues);
+    private boolean sendQF = false;
 
-        this.sendQF = Boolean.parseBoolean(configValues.get(CONFIG_SEND_QF));
+    @Override
+    protected void initialize(IndexConfiguration indexConfiguration) {
+        super.initialize(indexConfiguration);
+        this.sendQF = Boolean.parseBoolean(indexConfiguration.getConfigurationMap().get(CONFIG_SEND_QF));
     }
 
     @Override
