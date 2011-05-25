@@ -17,8 +17,8 @@ public class ConfigurationFactory {
      * @return a Map that only contains the configuration values for the index requested. The
      * key is in a simple format, i.e. without the index name prefix.
      */
-    public synchronized static Map<String, String> initIndexConfiguration(String indexName) {
-        Map<String, String> result = new HashMap<String, String>();
+    public synchronized static IndexConfiguration initIndexConfiguration(String indexName) {
+        Map<String, String> configurationMap = new HashMap<String, String>();
         Properties props = new Properties();
         try {
             props.load(ConfigurationFactory.class.getResourceAsStream("/solr.properties"));
@@ -27,13 +27,12 @@ public class ConfigurationFactory {
                 if (keyValue.startsWith(indexName)) {
                     String value = props.getProperty(keyValue);
                     String simpleKey = keyValue.substring(indexName.length() + 1);
-                    result.put(simpleKey, value);
+                    configurationMap.put(simpleKey, value);
                 }
             }
         } catch (IOException ex) {
             throw new IllegalStateException("/solr.properties not found", ex);
         }
-        return result;
+        return new IndexConfiguration(configurationMap);
     }
-
 }

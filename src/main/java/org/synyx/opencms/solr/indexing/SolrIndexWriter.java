@@ -121,6 +121,19 @@ public class SolrIndexWriter implements I_CmsIndexWriter {
         }
     }
 
+    /**
+     * Deletes all documents that are in the index.
+     * @throws IOException
+     */
+    public void deleteAllDocuments() throws IOException {
+        try {
+            solrServer.deleteByQuery("*:*");
+            commitable = true;
+        } catch (SolrServerException ex) {
+            throw new IOException(ex);
+        }
+    }
+
     private SolrInputDocument asSolrInputDocument(Document document, String documentId) {
         return new DocumentConverter().asSolrInputDocument(document, documentId);
     }
