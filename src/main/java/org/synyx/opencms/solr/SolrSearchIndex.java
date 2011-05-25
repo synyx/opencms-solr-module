@@ -1,14 +1,10 @@
 package org.synyx.opencms.solr;
 
-import java.util.Calendar;
 import org.opencms.main.CmsException;
 import org.synyx.opencms.solr.indexing.SolrIndexWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.DateTools;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.SortField;
@@ -31,7 +27,6 @@ import org.opencms.search.I_CmsIndexWriter;
 import org.opencms.search.Messages;
 import org.opencms.search.fields.CmsSearchField;
 import org.opencms.search.fields.CmsSearchFieldConfiguration;
-import org.opencms.search.CmsTimeWindowSearchFieldSupport;
 import org.opencms.search.RangeQuery;
 import org.opencms.db.CmsUserSettings;
 import org.joda.time.DateTime;
@@ -40,31 +35,22 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.opencms.search.MinMaxRangeQuery;
+import org.synyx.opencms.solr.indexing.AvailabilityAwareSearchFieldConfiguration;
 
 /**
  * A search index for OpenCms that uses SolrJ to query documents.
  * @author Florian Hopf, Synyx GmbH & Co. KG, hopf@synyx.de
  * @author Oliver Messner, Synyx GmbH & Co. KG, messner@synyx.de
  */
-public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeWindowSearchFieldSupport {
+public abstract class SolrSearchIndex extends CmsSearchIndex {
 
     public final static String FIELD_ID = "id";
     private Log LOG = LogFactory.getLog(SolrSearchIndex.class);
     private SolrServer solrServer;
     private boolean useSolrPaging = true;
     private int rowSize = 1000;
-    private static final long DEFAULT_DATE_EXPIRED;
-    private static final long DEFAULT_DATE_RELEASED = 0L;
     private static final String CONFIG_USE_SOLR_PAGING = "useSolrPaging";
     private static final String CONFIG_NO_SOLR_PAGING_ROW_SIZE = "rowSize";
-
-    static {
-        // 500 years should be enough
-        // too large numbers will make DateTools fail when parsing the date
-        Calendar cal = Calendar.getInstance();
-        cal.roll(Calendar.YEAR, 500);
-        DEFAULT_DATE_EXPIRED = cal.getTimeInMillis();
-    }
 
     @Override
     public void initialize() throws CmsSearchException {
@@ -83,45 +69,18 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
         }
     }
 
-    @Override
-    public Fieldable getDateReleaseSearchField(CmsResource resource) {
-        long dateReleased = DEFAULT_DATE_RELEASED;
-        if (resource.getDateReleased() != CmsResource.DATE_RELEASED_DEFAULT) {
-            dateReleased = resource.getDateReleased();
-        }
-        Fieldable dateReleasedField = new Field(FIELD_RELEASE, DateTools.dateToString(new Date(dateReleased),
-                DateTools.Resolution.MILLISECOND), Field.Store.YES, Field.Index.NOT_ANALYZED);
-        dateReleasedField.setBoost(0);
-        return dateReleasedField;
-    }
 
-    @Override
-    public Fieldable getDateExpiredSearchField(CmsResource resource) {
-        long dateExpired = DEFAULT_DATE_EXPIRED;
-        if (resource.getDateExpired() != CmsResource.DATE_EXPIRED_DEFAULT) {
-            dateExpired = resource.getDateExpired();
-        }
-
-        Fieldable dateExpiredField = new Field(FIELD_EXPIRED, DateTools.dateToString(new Date(dateExpired),
-                DateTools.Resolution.MILLISECOND), Field.Store.YES, Field.Index.NOT_ANALYZED);
-        dateExpiredField.setBoost(0);
-        return dateExpiredField;
-    }
-
-    @Override
-    public RangeQuery getDateReleaseRangeQuery(long timeMillis) {
+    protected RangeQuery getDateReleaseRangeQuery(long timeMillis) {
         DateTime dateTime = new DateTime(timeMillis, DateTimeZone.UTC);
         return new RangeQuery("[* TO " + dateTime + "]", dateTime.getMillis());
     }
 
-    @Override
-    public RangeQuery getDateExpiredRangeQuery(long timeMillis) {
+    protected RangeQuery getDateExpiredRangeQuery(long timeMillis) {
         DateTime dateTime = new DateTime(timeMillis, DateTimeZone.UTC);
         return new RangeQuery("[" + dateTime + " TO *]", dateTime.getMillis());
     }
 
-    @Override
-    public MinMaxRangeQuery getCreatedDateRangeQuery(long minTimeMillis, long maxTimeMillis) {
+    protected MinMaxRangeQuery getCreatedDateRangeQuery(long minTimeMillis, long maxTimeMillis) {
         if (minTimeMillis == Long.MIN_VALUE && maxTimeMillis == Long.MAX_VALUE) {
             return null;
         }
@@ -132,8 +91,7 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
         return new MinMaxRangeQuery(sb.toString(), dateTimeMin.getMillis(), dateTimeMax.getMillis());
     }
 
-    @Override
-    public MinMaxRangeQuery getLastModifiedDateRangeQuery(long minTimeMillis, long maxTimeMillis) {
+    protected MinMaxRangeQuery getLastModifiedDateRangeQuery(long minTimeMillis, long maxTimeMillis) {
         if (minTimeMillis == Long.MIN_VALUE && maxTimeMillis == Long.MAX_VALUE) {
             return null;
         }
@@ -249,6 +207,7 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
             addCategoryFilterQueryToSolrQuery(solrQuery, params);
             addResourceTypesFilterQueryToSolrQuery(solrQuery, params);
             addQueryToSolrQuery(solrQuery, params);
+            // TODO make this configurable
             addDateReleasedRangeFilterQuery(solrQuery, searchCms);
             addDateExpiredRangeFilterQuery(solrQuery, searchCms);
             addDateCreatedFilterQuery(solrQuery, params);
@@ -436,7 +395,7 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
             dateReleasedRangeFilterQuery = getDateReleaseRangeQuery(timeWarp).getRangeQueryString();
         }
 
-        solrQuery.addFilterQuery(buildFilterQuery(FIELD_RELEASE, dateReleasedRangeFilterQuery, Occur.MUST));
+        solrQuery.addFilterQuery(buildFilterQuery(AvailabilityAwareSearchFieldConfiguration.FIELD_RELEASE, dateReleasedRangeFilterQuery, Occur.MUST));
     }
 
     private void addDateExpiredRangeFilterQuery(SolrQuery solrQuery, CmsObject cms) {
@@ -451,7 +410,7 @@ public abstract class SolrSearchIndex extends CmsSearchIndex implements CmsTimeW
             dateExpiredRangeFilterQuery = getDateExpiredRangeQuery(timeWarp).getRangeQueryString();
         }
 
-        solrQuery.addFilterQuery(buildFilterQuery(FIELD_EXPIRED, dateExpiredRangeFilterQuery, Occur.MUST));
+        solrQuery.addFilterQuery(buildFilterQuery(AvailabilityAwareSearchFieldConfiguration.FIELD_EXPIRED, dateExpiredRangeFilterQuery, Occur.MUST));
     }
 
     private void addDateCreatedFilterQuery(SolrQuery solrQuery, CmsSearchParameters params) {
