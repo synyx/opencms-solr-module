@@ -8,7 +8,7 @@
     <name>OpenCms Solr integration</name>
     <description />
     <properties>
-        <moduleversion>0.1</moduleversion>
+        <moduleversion>${project.version}</moduleversion>
         <shortname>solr</shortname>
         <opencmsname>org.synyx.opencms.solr</opencmsname>
         <databaseuser>root</databaseuser>
@@ -137,9 +137,9 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>com.synyx</groupId>
+                <groupId>org.synyx</groupId>
                 <artifactId>maven-opencms</artifactId>
-                <version>0.1.18</version>
+                <version>1.0</version>
                 <executions>
                     <execution>
                         <goals>
@@ -156,8 +156,12 @@
                             <exportversion>5</exportversion>
                             <opencmsversion>7.5.2</opencmsversion>
                             <version>${project.moduleversion}</version>
-                            <srcfolder>${project.basedir}/src/main/vfs/</srcfolder>
-                            <excludes>META-INF/,WEB-INF/,**/.svn/</excludes>
+                            <srcResources>
+                                <resource>
+                                    <directory>${project.basedir}/src/main/vfs/</directory>
+                                </resource>
+                            </srcResources>
+			    <excludes>META-INF/,WEB-INF/,**/.svn/</excludes>
                             <distfolder>${project.basedir}/target/opencms-module/</distfolder>
                             <webappfolder>${project.basedir}/OpenCmsWork/WEB-INF/</webappfolder>
                             <author>Synyx GmbH &amp; Co. KG</author>
