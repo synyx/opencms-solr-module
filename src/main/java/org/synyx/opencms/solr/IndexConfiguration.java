@@ -31,6 +31,24 @@ public class IndexConfiguration {
         return solrServer;
     }
 
+    public boolean getBooleanValue(String key, boolean defaultValue) {
+        String value = configurationMap.get(key);
+        if (value == null) {
+            return defaultValue;
+        } else {
+            return Boolean.parseBoolean(value);
+        }
+    }
+
+    public int getIntValue(String key, int defaultValue) {
+        String value = configurationMap.get(key);
+        if (value == null) {
+            return defaultValue;
+        } else {
+            return Integer.parseInt(value);
+        }
+    }
+
     private void initServer() {
         try {
             CommonsHttpSolrServer httpSolrServer = new CommonsHttpSolrServer(configurationMap.get(CONFIG_URL));

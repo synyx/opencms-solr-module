@@ -47,10 +47,12 @@ public abstract class SolrSearchIndex extends CmsSearchIndex {
     public final static String FIELD_ID = "id";
     private Log LOG = LogFactory.getLog(SolrSearchIndex.class);
     private SolrServer solrServer;
-    private boolean useSolrPaging = true;
-    private int rowSize = 1000;
+    private boolean useSolrPaging;
+    private int rowSize;
+    private boolean availabilityInSolr;
     private static final String CONFIG_USE_SOLR_PAGING = "useSolrPaging";
     private static final String CONFIG_NO_SOLR_PAGING_ROW_SIZE = "rowSize";
+    private static final String CONFIG_AVAILABILITY_IN_SOLR = "availabilityInSolr";
 
     @Override
     public void initialize() throws CmsSearchException {
@@ -61,12 +63,9 @@ public abstract class SolrSearchIndex extends CmsSearchIndex {
 
     protected void initialize(IndexConfiguration indexConfiguration) {
         this.solrServer = indexConfiguration.getSolrServer();
-        String useSolrPagingText = indexConfiguration.getConfigurationMap().get(CONFIG_USE_SOLR_PAGING);
-        this.useSolrPaging = Boolean.valueOf(useSolrPagingText);
-        String rowSizeText = indexConfiguration.getConfigurationMap().get(CONFIG_NO_SOLR_PAGING_ROW_SIZE);
-        if (rowSizeText != null) {
-            rowSize = Integer.parseInt(rowSizeText);
-        }
+        this.useSolrPaging = indexConfiguration.getBooleanValue(CONFIG_USE_SOLR_PAGING, false);
+        this.rowSize = indexConfiguration.getIntValue(CONFIG_NO_SOLR_PAGING_ROW_SIZE, 1000);
+        this.availabilityInSolr = indexConfiguration.getBooleanValue(CONFIG_AVAILABILITY_IN_SOLR, false);
     }
 
 
@@ -207,9 +206,10 @@ public abstract class SolrSearchIndex extends CmsSearchIndex {
             addCategoryFilterQueryToSolrQuery(solrQuery, params);
             addResourceTypesFilterQueryToSolrQuery(solrQuery, params);
             addQueryToSolrQuery(solrQuery, params);
-            // TODO make this configurable
-            addDateReleasedRangeFilterQuery(solrQuery, searchCms);
-            addDateExpiredRangeFilterQuery(solrQuery, searchCms);
+            if (availabilityInSolr) {
+                addDateReleasedRangeFilterQuery(solrQuery, searchCms);
+                addDateExpiredRangeFilterQuery(solrQuery, searchCms);
+            }
             addDateCreatedFilterQuery(solrQuery, params);
             addDateLastModifiedFilterQuery(solrQuery, params);
 
