@@ -34,6 +34,14 @@
         </repository>
     </distributionManagement>
 
+    <licenses>
+        <license>
+            <name>GNU Lesser General Public License</name>
+            <url>http://www.fsf.org/licensing/licenses/lgpl.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
     <repositories>
         <repository>
             <id>nexus.synyx.public-releases</id>
