@@ -27,14 +27,12 @@ import org.opencms.search.I_CmsIndexWriter;
 import org.opencms.search.Messages;
 import org.opencms.search.fields.CmsSearchField;
 import org.opencms.search.fields.CmsSearchFieldConfiguration;
-import org.opencms.search.RangeQuery;
 import org.opencms.db.CmsUserSettings;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import org.opencms.search.MinMaxRangeQuery;
 import org.synyx.opencms.solr.indexing.AvailabilityAwareSearchFieldConfiguration;
 
 /**
