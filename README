@@ -1,0 +1,4 @@
+Builds the module for the solr integration.
+
+Running mvn package will build the module without the solr.properties file
+Running mvn package -P includeSolrProperties will build the complete module that can be used for easy starting

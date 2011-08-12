@@ -8,7 +8,7 @@ import org.opencms.search.fields.CmsSearchField;
 import org.opencms.util.CmsStringUtil;
 
 /**
- *
+ * Search result for Solr search results.
  * @author Florian Hopf, Synyx GmbH & Co. KG, hopf@synyx.de
  */
 public class SolrSearchResult extends CmsSearchResult {

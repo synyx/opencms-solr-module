@@ -1,6 +1,7 @@
 package org.synyx.opencms.solr;
 
 /**
+ * Runtime exception for any indexing errors.
  * @author Oliver Messner, Synyx GmbH & Co. KG, messner@synyx.de
  */
 public class SolrSearchIndexException extends RuntimeException {

@@ -1,5 +1,6 @@
 package org.synyx.opencms.solr;
 
+import org.opencms.main.CmsException;
 import org.synyx.opencms.solr.indexing.SolrIndexWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -15,6 +16,7 @@ import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.opencms.file.CmsObject;
 import org.opencms.file.CmsResource;
+import org.opencms.file.CmsResourceFilter;
 import org.opencms.main.OpenCms;
 import org.opencms.search.CmsIndexException;
 import org.opencms.search.CmsSearchException;
@@ -24,9 +26,14 @@ import org.opencms.search.CmsSearchResultList;
 import org.opencms.search.I_CmsIndexWriter;
 import org.opencms.search.Messages;
 import org.opencms.search.fields.CmsSearchField;
+import org.opencms.search.fields.CmsSearchFieldConfiguration;
+import org.opencms.db.CmsUserSettings;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import org.synyx.opencms.solr.indexing.AvailabilityAwareSearchFieldConfiguration;
 
 /**
  * A search index for OpenCms that uses SolrJ to query documents.
@@ -37,8 +44,60 @@ public abstract class SolrSearchIndex extends CmsSearchIndex {
 
     public final static String FIELD_ID = "id";
     private Log LOG = LogFactory.getLog(SolrSearchIndex.class);
-    private SolrServer solrServer = ServerFactory.getSolrServer("");
-    private boolean useSolrPaging = true;
+    private SolrServer solrServer;
+    private boolean useSolrPaging;
+    private int rowSize;
+    private boolean availabilityInSolr;
+    private static final String CONFIG_USE_SOLR_PAGING = "useSolrPaging";
+    private static final String CONFIG_NO_SOLR_PAGING_ROW_SIZE = "rowSize";
+    private static final String CONFIG_AVAILABILITY_IN_SOLR = "availabilityInSolr";
+
+    @Override
+    public void initialize() throws CmsSearchException {
+        super.initialize();
+        IndexConfiguration indexConfiguration = ConfigurationFactory.initIndexConfiguration(getName());
+        initialize(indexConfiguration);
+    }
+
+    protected void initialize(IndexConfiguration indexConfiguration) {
+        this.solrServer = indexConfiguration.getSolrServer();
+        this.useSolrPaging = indexConfiguration.getBooleanValue(CONFIG_USE_SOLR_PAGING, false);
+        this.rowSize = indexConfiguration.getIntValue(CONFIG_NO_SOLR_PAGING_ROW_SIZE, 1000);
+        this.availabilityInSolr = indexConfiguration.getBooleanValue(CONFIG_AVAILABILITY_IN_SOLR, false);
+    }
+
+
+    protected RangeQuery getDateReleaseRangeQuery(long timeMillis) {
+        DateTime dateTime = new DateTime(timeMillis, DateTimeZone.UTC);
+        return new RangeQuery("[* TO " + dateTime + "]", dateTime.getMillis());
+    }
+
+    protected RangeQuery getDateExpiredRangeQuery(long timeMillis) {
+        DateTime dateTime = new DateTime(timeMillis, DateTimeZone.UTC);
+        return new RangeQuery("[" + dateTime + " TO *]", dateTime.getMillis());
+    }
+
+    protected MinMaxRangeQuery getCreatedDateRangeQuery(long minTimeMillis, long maxTimeMillis) {
+        if (minTimeMillis == Long.MIN_VALUE && maxTimeMillis == Long.MAX_VALUE) {
+            return null;
+        }
+
+        DateTime dateTimeMin = new DateTime(minTimeMillis, DateTimeZone.UTC);
+        DateTime dateTimeMax = new DateTime(maxTimeMillis, DateTimeZone.UTC);
+        StringBuilder sb = new StringBuilder("[").append((minTimeMillis > Long.MIN_VALUE ? dateTimeMin : "*")).append(" TO ").append((maxTimeMillis < Long.MAX_VALUE ? dateTimeMax : "*")).append("]");
+        return new MinMaxRangeQuery(sb.toString(), dateTimeMin.getMillis(), dateTimeMax.getMillis());
+    }
+
+    protected MinMaxRangeQuery getLastModifiedDateRangeQuery(long minTimeMillis, long maxTimeMillis) {
+        if (minTimeMillis == Long.MIN_VALUE && maxTimeMillis == Long.MAX_VALUE) {
+            return null;
+        }
+
+        DateTime dateTimeMin = new DateTime(minTimeMillis, DateTimeZone.UTC);
+        DateTime dateTimeMax = new DateTime(maxTimeMillis, DateTimeZone.UTC);
+        StringBuilder sb = new StringBuilder("[").append((minTimeMillis > Long.MIN_VALUE ? dateTimeMin : "*")).append(" TO ").append((maxTimeMillis < Long.MAX_VALUE ? dateTimeMax : "*")).append("]");
+        return new MinMaxRangeQuery(sb.toString(), minTimeMillis, maxTimeMillis);
+    }
 
     /**
      * Returns the Lucene document with the given root path from the index.<p>
@@ -76,7 +135,6 @@ public abstract class SolrSearchIndex extends CmsSearchIndex {
      */
     @Override
     public I_CmsIndexWriter getIndexWriter(boolean create) throws CmsIndexException {
-        // TODO it's very likely that we have to include the index name in the url
         return new SolrIndexWriter(solrServer);
     }
 
@@ -112,8 +170,6 @@ public abstract class SolrSearchIndex extends CmsSearchIndex {
     public final synchronized CmsSearchResultList search(CmsObject cms, CmsSearchParameters params)
             throws CmsSearchException {
 
-        // TODO check if access to Solr needs to be synchronized
-
         long timeTotal = -System.currentTimeMillis();
         long timeLucene;
         long timeResultProcessing;
@@ -148,6 +204,12 @@ public abstract class SolrSearchIndex extends CmsSearchIndex {
             addCategoryFilterQueryToSolrQuery(solrQuery, params);
             addResourceTypesFilterQueryToSolrQuery(solrQuery, params);
             addQueryToSolrQuery(solrQuery, params);
+            if (availabilityInSolr) {
+                addDateReleasedRangeFilterQuery(solrQuery, searchCms);
+                addDateExpiredRangeFilterQuery(solrQuery, searchCms);
+            }
+            addDateCreatedFilterQuery(solrQuery, params);
+            addDateLastModifiedFilterQuery(solrQuery, params);
 
             if (params.getSort() != null) {
                 for (SortField sortField : params.getSort().getSort()) {
@@ -162,6 +224,9 @@ public abstract class SolrSearchIndex extends CmsSearchIndex {
             if (useSolrPaging) {
                 solrQuery.setRows(params.getMatchesPerPage());
                 solrQuery.setStart(params.getMatchesPerPage() * (params.getSearchPage() - 1));
+            } else {
+                // setting to a quite high value should be sufficient
+                solrQuery.setRows(rowSize);
             }
 
             if (params instanceof SolrSearchParameters) {
@@ -194,7 +259,6 @@ public abstract class SolrSearchIndex extends CmsSearchIndex {
 
             if (hits != null) {
                 //int hitCount = hits.size() > hits.scoreDocs.length ? hits.scoreDocs.length : hits.totalHits;
-                // TODO prevent this cast?
                 int hitCount = (int) hits.getNumFound();
                 int page = params.getSearchPage();
                 int start = -1, end = -1;
@@ -212,29 +276,27 @@ public abstract class SolrSearchIndex extends CmsSearchIndex {
                 }
 
                 int visibleHitCount = hitCount;
-                for (int i = start, cnt = 0; (i < hitCount) && (i < end); i++) {
+
+                for (int i = 0, cnt = 0; (i < hitCount)
+                        && ((useSolrPaging && i < end) || (!useSolrPaging && cnt < end)); i++) {
                     try {
-                        SolrDocument doc = null;
-                        if (useSolrPaging) {
-                            doc = hits.get(cnt);
-                        } else {
-                            doc = hits.get(i);
-                        }
-                        Date dateCreated = (Date) doc.get(CmsSearchField.FIELD_DATE_CREATED);
-                        Date dateLastModified = (Date) doc.get(CmsSearchField.FIELD_DATE_LASTMODIFIED);
+                        SolrDocument solrDocument = hits.get(i);
 
-                        String path = (String) doc.get(CmsSearchField.FIELD_PATH);
-                        String type = (String) doc.get(CmsSearchField.FIELD_TYPE);
+                        String path = (String) solrDocument.get(CmsSearchField.FIELD_PATH);
+                        String type = (String) solrDocument.get(CmsSearchField.FIELD_TYPE);
 
-                        // TODO for restricted resources this currently delivers less resources
-                        if ((isInTimeRange(dateCreated, dateLastModified, params)) && (hasReadPermission(searchCms, type, path))) {
-                            SolrSearchResult searchResult = createSearchResult(response, doc, hits);
-                            searchResults.add(searchResult);
+                        if ((hasReadPermission(searchCms, type, path))) {
+                            // either add the result if we are in the current pagination window or if
+                            // we use solr paging anyway
+                            if (useSolrPaging || cnt >= start) {
+                                searchResults.add(createSearchResult(response, solrDocument, hits));
+                            }
                             cnt++;
                         } else {
                             visibleHitCount--;
-                            cnt++;
+                            LOG.warn("Indexed document found could not be added to the search result: " + path);
                         }
+
                     } catch (Exception e) {
                         // should not happen, but if it does we want to go on with the next result nevertheless
                         if (LOG.isWarnEnabled()) {
@@ -245,7 +307,6 @@ public abstract class SolrSearchIndex extends CmsSearchIndex {
 
                 searchResults.setHitCount(visibleHitCount); // save the total count of search results
                 searchResults.setFacetFields(response.getFacetFields());
-                searchResults.setFacetPivot(response.getFacetPivot());
             } else {
                 searchResults.setHitCount(0);
             }
@@ -318,6 +379,105 @@ public abstract class SolrSearchIndex extends CmsSearchIndex {
                 solrQuery.addFilterQuery(buildFilterQuery(CmsSearchField.FIELD_TYPE, resourceType, Occur.MUST));
             }
         }
+    }
+
+    private void addDateReleasedRangeFilterQuery(SolrQuery solrQuery, CmsObject cms) {
+        String dateReleasedRangeFilterQuery = null;
+
+        CmsUserSettings cmsUserSettings = new CmsUserSettings(cms);
+        long timeWarp = cmsUserSettings.getTimeWarp();
+        if (timeWarp == -1) {
+            dateReleasedRangeFilterQuery =
+                    getDateReleaseRangeQuery(new DateTime(DateTimeZone.UTC).getMillis()).getRangeQueryString();
+        } else {
+            dateReleasedRangeFilterQuery = getDateReleaseRangeQuery(timeWarp).getRangeQueryString();
+        }
+
+        solrQuery.addFilterQuery(buildFilterQuery(AvailabilityAwareSearchFieldConfiguration.FIELD_RELEASE, dateReleasedRangeFilterQuery, Occur.MUST));
+    }
+
+    private void addDateExpiredRangeFilterQuery(SolrQuery solrQuery, CmsObject cms) {
+        String dateExpiredRangeFilterQuery = null;
+
+        CmsUserSettings cmsUserSettings = new CmsUserSettings(cms);
+        long timeWarp = cmsUserSettings.getTimeWarp();
+        if (timeWarp == -1) {
+            dateExpiredRangeFilterQuery =
+                    getDateExpiredRangeQuery(new DateTime(DateTimeZone.UTC).getMillis()).getRangeQueryString();
+        } else {
+            dateExpiredRangeFilterQuery = getDateExpiredRangeQuery(timeWarp).getRangeQueryString();
+        }
+
+        solrQuery.addFilterQuery(buildFilterQuery(AvailabilityAwareSearchFieldConfiguration.FIELD_EXPIRED, dateExpiredRangeFilterQuery, Occur.MUST));
+    }
+
+    private void addDateCreatedFilterQuery(SolrQuery solrQuery, CmsSearchParameters params) {
+        MinMaxRangeQuery createdDateRangeQuery =
+                getCreatedDateRangeQuery(params.getMinDateCreated(), params.getMaxDateCreated());
+        if (createdDateRangeQuery != null) {
+            solrQuery.addFilterQuery(buildFilterQuery(CmsSearchField.FIELD_DATE_CREATED,
+                    createdDateRangeQuery.getRangeQueryString(), Occur.MUST));
+        }
+    }
+
+    private void addDateLastModifiedFilterQuery(SolrQuery solrQuery, CmsSearchParameters params) {
+        MinMaxRangeQuery lastModifiedDateRangeQuery =
+                getLastModifiedDateRangeQuery(params.getMinDateLastModified(), params.getMaxDateLastModified());
+        if (lastModifiedDateRangeQuery != null) {
+            solrQuery.addFilterQuery(buildFilterQuery(CmsSearchField.FIELD_DATE_LASTMODIFIED,
+                    lastModifiedDateRangeQuery.getRangeQueryString(), Occur.MUST));
+        }
+    }
+
+    @Override
+    protected boolean hasReadPermission(CmsObject cms, String type, String path) {
+        if (!isCheckingPermissions()) {
+            return true;
+        }
+
+        if ((type == null) || (path == null)) {
+            // permission check needs only to be performed for VFS documents that contain both fields
+            return true;
+        }
+
+        if (!CmsSearchFieldConfiguration.VFS_DOCUMENT_KEY_PREFIX.equals(type)
+                && !OpenCms.getResourceManager().hasResourceType(type)) {
+            // this is not a known VFS resource type (also not the generic "VFS" type of OpenCms before 7.0)
+            return true;
+        }
+
+        String contextPath = cms.getRequestContext().removeSiteRoot(path);
+        CmsUserSettings cmsUserSettings = new CmsUserSettings(cms);
+        long timeWarp = cmsUserSettings.getTimeWarp();
+        if (timeWarp != -1) {
+            return hasReadPermissionsInTimeWarpMode(cms, contextPath, timeWarp);
+        }
+        return cms.existsResource(contextPath, CmsResourceFilter.DEFAULT);
+    }
+
+    private boolean hasReadPermissionsInTimeWarpMode(CmsObject cms, String contextPath, long timeWarp) {
+        if (cms.existsResource(contextPath, CmsResourceFilter.IGNORE_EXPIRATION)) {
+            long dateRelease = getDateReleaseRangeQuery(timeWarp).getTimeMillis();
+            long dateExpired = getDateExpiredRangeQuery(timeWarp).getTimeMillis();
+            CmsResource resource = null;
+            try {
+                resource = cms.readResource(contextPath, CmsResourceFilter.IGNORE_EXPIRATION);
+                if (resource.getDateReleased() > dateRelease || resource.getDateExpired() < dateExpired) {
+                    return false;
+                }
+            } catch (CmsException e) {
+                LOG.error(e.getMessage(), e);
+                return false;
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    protected boolean isInTimeRange(Date dateCreated, Date dateLastModified, CmsSearchParameters params) {
+        return true;
     }
 
     private String buildFilterQuery(String fieldName, String fieldValue, Occur occur) {
