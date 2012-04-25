@@ -3,14 +3,13 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.synyx.opencms</groupId>
     <version>0.9.11-SNAPSHOT</version>
-    <artifactId>solr</artifactId>
+    <artifactId>org.synyx.opencms.solr</artifactId>
     <packaging>jar</packaging>
     <name>OpenCms Solr integration</name>
     <description />
     <properties>
         <moduleversion>${project.version}</moduleversion>
         <shortname>solr</shortname>
-        <opencmsname>org.synyx.opencms.solr</opencmsname>
         <databaseuser>root</databaseuser>
         <databasepass />
         <databaseurl>jdbc:mysql://localhost:3306/ocsolr</databaseurl>
@@ -32,6 +31,10 @@
             <id>public-releases.nexus.synyx.de</id>
             <url>http://nexus.synyx.de/content/repositories/public-releases</url>
         </repository>
+        <snapshotRepository>
+	    <id>snapshots.nexus.synyx.de</id>
+            <url>http://nexus.synyx.de/content/repositories/public-snapshots</url>
+        </snapshotRepository>
     </distributionManagement>
 
     <licenses>
@@ -154,7 +157,7 @@
                             <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.basedir}/target/opencms-module/system/modules/${opencmsname}/lib/</outputDirectory>
+                            <outputDirectory>${project.build.directory}/opencms/system/modules/${project.artifactId}/lib/</outputDirectory>
                             <includeGroupIds>joda-time,org.apache.solr,org.slf4j</includeGroupIds>
                         </configuration>
                     </execution>
@@ -163,18 +166,16 @@
             <plugin>
                 <groupId>org.synyx</groupId>
                 <artifactId>maven-opencms</artifactId>
-                <version>1.0</version>
+                <version>1.1</version>
                 <executions>
                     <execution>
                         <goals>
                             <goal>createtree</goal>
                             <goal>manifest</goal>
-                            <goal>createzip</goal>
-                            <!--<goal>cmsshell</goal>-->
                         </goals>
                         <configuration>
-                            <name>${opencmsname}</name>
-                            <targetLibPath>system/modules/${opencmsname}/lib/</targetLibPath>
+                            <name>${project.artifactId}</name>
+                            <targetLibPath>system/modules/${project.artifactId}/lib/</targetLibPath>
                             <jarFile>${project.build.directory}/${project.build.finalName}.jar</jarFile>
                             <generateuuids>true</generateuuids>
                             <exportversion>5</exportversion>
@@ -186,7 +187,7 @@
                                 </resource>
                             </srcResources>
                             <excludes>${moduleexcludes}</excludes>
-                            <distfolder>${project.basedir}/target/opencms-module/</distfolder>
+                            <distfolder>${project.basedir}/target/opencms/</distfolder>
                             <webappfolder>${project.basedir}/OpenCmsWork/WEB-INF/</webappfolder>
                             <author>Synyx GmbH &amp; Co. KG</author>
                             <authoremail>info@synyx.de</authoremail>
@@ -196,16 +197,16 @@
                             <parameters />
                             <exportpoints>
                                 <property>
-                                    <name>/system/modules/${opencmsname}/classes/</name>
+                                    <name>/system/modules/${project.artifactId}/classes/</name>
                                     <value>WEB-INF/classes/</value>
                                 </property>
                                 <property>
-                                    <name>/system/modules/${opencmsname}/lib/</name>
+                                    <name>/system/modules/${project.artifactId}/lib/</name>
                                     <value>WEB-INF/lib/</value>
                                 </property>
                             </exportpoints>
                             <resources>
-                                <param>/system/modules/${opencmsname}/</param>
+                                <param>/system/modules/${project.artifactId}/</param>
                             </resources>
                         </configuration>
                     </execution>
@@ -230,6 +231,25 @@
                         <type>jar</type>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.2-beta-5</version>
+                <executions>
+                    <execution>
+                        <id>assemble</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/main/assembly/opencms-module.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

@@ -1,0 +1,31 @@
+<assembly>
+	<id>opencms-module</id>
+	<formats>
+		<format>zip</format>
+	</formats>
+	<includeBaseDirectory>false</includeBaseDirectory>
+	<fileSets>
+		<fileSet>
+			<directory>${project.build.directory}/opencms/</directory>
+			<outputDirectory>/</outputDirectory>
+		</fileSet>
+	</fileSets>
+	<files>
+		<file>
+			<!-- The FinalName should not have the "-SNAPSHOT" extension. -->
+			<source>${project.build.directory}/${project.build.finalName}.jar</source>
+			<outputDirectory>/system/modules/${project.artifactId}/lib</outputDirectory>
+		</file>
+	</files>
+<!--	<dependencySets>
+		<dependencySet>
+			<outputFileNameMapping>${artifact.artifactId}.${artifact.extension}</outputFileNameMapping>
+			<outputDirectory>/system/modules/${project.artifactId}/lib</outputDirectory>
+			<unpack>false</unpack>
+			<scope>runtime</scope>
+			<excludes>
+				<exclude>${project.groupId}:${project.artifactId}:jar</exclude>
+			</excludes>
+		</dependencySet>
+	</dependencySets>-->
+</assembly>
